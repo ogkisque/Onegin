@@ -19,7 +19,7 @@ size_t get_file_size (Errors* error);
 void errors_handler (Errors error);
 char* memory_alloc (Errors* error, size_t size_file);
 int copy_data (char* buffer, Errors* error, size_t size_file);
-size_t create_lines_pointers (char** lines, char* buffer, size_t length, Errors* error);
+char** create_lines_pointers (size_t* num_lines, char* buffer, size_t length, Errors* error);
 
 int main ()
 {
@@ -48,22 +48,18 @@ int main ()
     }
 
     buffer[length + 1] = '\n';
-    char** lines = NULL;
-    size_t num_lines = create_lines_pointers (lines, buffer, length, &error);
+    size_t num_lines = 0;
+    char** lines = create_lines_pointers (&num_lines, buffer, length, &error);
+
     if (error >= 0)
     {
         errors_handler (error);
         return 1;
     }
 
-    printf ("%d\n", num_lines);
-    printf ("%p\n", lines[1]);
-    puts (lines[0]);
-
     for (size_t i = 0; i < num_lines; i++)
-    {
         puts (lines[i]);
-    }
+
     return 0;
 }
 
@@ -143,9 +139,9 @@ int copy_data (char* buffer, Errors* error, size_t size_file)
     return 1;
 }
 
-size_t create_lines_pointers (char** lines, char* buffer, size_t length, Errors* error)
+char** create_lines_pointers (size_t* num_lines, char* buffer, size_t length, Errors* error)
 {
-    lines = (char**) calloc (length, sizeof (char*));
+    char** lines = (char**) calloc (length, sizeof (char*));
     if (lines == NULL)
     {
         *error = MEMORY_ALLOC_ERR;
@@ -153,20 +149,19 @@ size_t create_lines_pointers (char** lines, char* buffer, size_t length, Errors*
     }
 
     lines[0] = buffer;
-    size_t num_lines = 1;
+    *num_lines = 1;
     for (size_t i = 0; i < length; i++)
     {
         if (buffer[i] == '\n')
         {
             buffer[i] = '\0';
-            lines[num_lines] = &buffer[i+1];
-            num_lines++;
+            lines[*num_lines] = &buffer[i+1];
+            (*num_lines)++;
         }
     }
 
-    lines = (char**) realloc (lines, num_lines * sizeof (char*));
-
-    return num_lines;
+    lines = (char**) realloc (lines, *num_lines * sizeof (char*));
+    return lines;
 }
 
 
