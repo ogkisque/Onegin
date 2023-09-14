@@ -3,6 +3,15 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <math.h>
+#include <string.h>
+#include <ctype.h>
+
+#define CHECK_ERROR(error)\
+        if (error >= 0)\
+        {\
+            errors_handler (error);\
+            return 1;\
+        }
 
 enum Errors
 {
@@ -13,63 +22,73 @@ enum Errors
     COPY_FILE_ERR    =  4
 };
 
-const char* FILE_NAME = "onegin.txt";
-
-size_t get_file_size (Errors* error);
-void errors_handler (Errors error);
-char* memory_alloc (Errors* error, size_t size_file);
-int copy_data (char* buffer, Errors* error, size_t size_file);
-char** create_lines_pointers (size_t* num_lines, char* buffer, size_t length, Errors* error);
-
-int main ()
+struct Text
 {
+    char* buffer;
+    size_t length;
+    char** lines;
+    size_t num_lines;
+};
+
+const size_t MAX_SIZE_FILE_NAME = 50;
+
+size_t get_file_size (const char* file_name, Errors* error);
+void errors_handler (Errors error);
+char* memory_alloc (size_t size_file, Errors* error);
+int copy_data (const char* file_name, char* buffer, size_t size_file, Errors* error);
+char** create_lines_pointers (Text* text, Errors* error);
+void swap_lines (char** lines, size_t left, size_t right);
+int compare_str (const char* str_left, const char* str_right);
+size_t partit (char** lines, size_t left, size_t right);
+void my_q_sort (char** lines, size_t left, size_t right);
+
+int main (int args, char* argv[])
+{
+    char file_name[MAX_SIZE_FILE_NAME] = "";
+    if (args == 2)
+        strncpy (file_name, argv[1], MAX_SIZE_FILE_NAME);
+    else
+        strncpy (file_name, "onegin.txt", MAX_SIZE_FILE_NAME);
+
     Errors error = CORRECT;
+    Text text = {.buffer = NULL, .length = 0, .lines = NULL, .num_lines = 0};
 
-    size_t size_file = get_file_size (&error);
-    if (error >= 0)
-    {
-        errors_handler (error);
-        return 1;
-    }
-    size_t length = size_file / sizeof (char);
+    size_t size_file = get_file_size (file_name, &error);
+    CHECK_ERROR(error);
 
-    char* buffer = memory_alloc (&error, size_file);
-    if (error >= 0)
-    {
-        errors_handler (error);
-        return 1;
-    }
+    text.length = size_file / sizeof (char);
 
-    copy_data (buffer, &error, size_file);
-    if (error >= 0)
-    {
-        errors_handler (error);
-        return 1;
-    }
+    text.buffer = memory_alloc (size_file, &error);
+    CHECK_ERROR(error);
 
-    buffer[length + 1] = '\n';
-    size_t num_lines = 0;
-    char** lines = create_lines_pointers (&num_lines, buffer, length, &error);
+    copy_data (file_name, text.buffer, size_file, &error);
+    CHECK_ERROR(error);
 
-    if (error >= 0)
-    {
-        errors_handler (error);
-        return 1;
-    }
+    (text.buffer)[text.length + 1] = '\n';
+    text.num_lines = 0;
+    text.lines = create_lines_pointers (&text, &error);
+    CHECK_ERROR(error);
 
-    for (size_t i = 0; i < num_lines; i++)
-        puts (lines[i]);
+    printf ("%d\n", compare_str ("a!b,C!!!d", ".aBc566r"));
+
+    my_q_sort (text.lines, 0, text.num_lines - 1);
+
+    for (size_t i = 0; i < text.num_lines; i++)
+        puts ((text.lines)[i]);
+
+    free (text.buffer);
+    free (text.lines);
 
     return 0;
 }
 
-size_t get_file_size (Errors* error)
+size_t get_file_size (const char* file_name, Errors* error)
 {
     assert (error);
 
     struct stat st;
 
-    if (stat (FILE_NAME, &st) == -1)
+    if (stat (file_name, &st) == -1)
     {
         *error = SIZE_FILE_ERR;
         return 0;
@@ -102,7 +121,7 @@ void errors_handler (Errors error)
     }
 }
 
-char* memory_alloc (Errors* error, size_t size_file)
+char* memory_alloc (size_t size_file, Errors* error)
 {
     assert (error);
 
@@ -115,12 +134,12 @@ char* memory_alloc (Errors* error, size_t size_file)
     return NULL;
 }
 
-int copy_data (char* buffer, Errors* error, size_t size_file)
+int copy_data (const char* file_name, char* buffer, size_t size_file, Errors* error)
 {
     assert (buffer);
     assert (error);
 
-    FILE* file = fopen (FILE_NAME, "r");
+    FILE* file = fopen (file_name, "r");
 
     if (file == NULL)
     {
@@ -139,30 +158,126 @@ int copy_data (char* buffer, Errors* error, size_t size_file)
     return 1;
 }
 
-char** create_lines_pointers (size_t* num_lines, char* buffer, size_t length, Errors* error)
+char** create_lines_pointers (Text* text, Errors* error)
 {
-    char** lines = (char**) calloc (length, sizeof (char*));
+    assert (text);
+    assert (error);
+
+    char** lines = (char**) calloc (text->length, sizeof (char*));
     if (lines == NULL)
     {
         *error = MEMORY_ALLOC_ERR;
         return 0;
     }
 
-    lines[0] = buffer;
-    *num_lines = 1;
-    for (size_t i = 0; i < length; i++)
+    lines[0] = text->buffer;
+    text->num_lines = 1;
+    for (size_t i = 0; i < text->length; i++)
     {
-        if (buffer[i] == '\n')
+        if ((text->buffer)[i] == '\n')
         {
-            buffer[i] = '\0';
-            lines[*num_lines] = &buffer[i+1];
-            (*num_lines)++;
+            (text->buffer)[i] = '\0';
+            lines[text->num_lines] = &((text->buffer)[i+1]);
+            (text->num_lines)++;
         }
     }
 
-    lines = (char**) realloc (lines, *num_lines * sizeof (char*));
+    lines = (char**) realloc (lines, text->num_lines * sizeof (char*));
     return lines;
 }
 
+void swap_lines (char** lines, size_t left, size_t right)
+{
+    assert (lines);
 
+    char* tmp = lines[left];
+    lines[left] = lines[right];
+    lines[right] = tmp;
+}
 
+int compare_str (const char* str_left, const char* str_right)
+{
+    assert (str_left);
+    assert (str_right);
+
+    int ans = 0;
+    size_t i = 0;
+    size_t j = 0;
+
+    while (str_left[i] != '\0' && str_right[j] != '\0')
+    {
+        if (!isalpha (str_left[i]))
+        {
+            i++;
+            continue;
+        }
+        if (!isalpha (str_right[j]))
+        {
+            j++;
+            continue;
+        }
+
+        if (toupper (str_left[i]) > toupper (str_right[j]))
+            ans = 1;
+        if (toupper (str_left[i]) < toupper (str_right[j]))
+            ans = -1;
+        if (ans != 0)
+            break;
+        i++;
+        j++;
+    }
+    return ans;
+}
+
+size_t partit (char** lines, size_t left, size_t right)
+{
+    assert (lines);
+
+    if (right - left == 1)
+    {
+        if (strcmp (lines[right], lines[left]) < 0)
+            swap_lines (lines, left, right);
+        return right;
+    }
+
+    if (right - left == 0)
+    {
+        return right;
+    }
+
+    char* mid = lines[(left + right) / 2];
+
+    while (left < right)
+    {
+        if (strcmp (lines[left], mid) >= 0)
+        {
+            while (right > left)
+            {
+                if (strcmp (lines[right], mid) <= 0)
+                {
+                    swap_lines (lines, left, right);
+                    if (strcmp (lines[right], lines[left]) != 0)
+                        left--;
+                    break;
+                }
+                right--;
+            }
+        }
+        left++;
+    }
+
+    return right;
+}
+
+void my_q_sort (char** lines, size_t left, size_t right)
+{
+    assert (lines);
+
+    size_t mid = partit (lines, left, right);
+
+    if (right - left >= 1)
+    {
+        my_q_sort (lines, left, mid - 1);
+        my_q_sort (lines, mid + 1, right);
+    }
+}
