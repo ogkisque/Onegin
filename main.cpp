@@ -69,8 +69,6 @@ int main (int args, char* argv[])
     text.lines = create_lines_pointers (&text, &error);
     CHECK_ERROR(error);
 
-    printf ("%d\n", compare_str ("a!b,C!!!d", ".aBc566r"));
-
     my_q_sort (text.lines, 0, text.num_lines - 1);
 
     for (size_t i = 0; i < text.num_lines; i++)
@@ -233,51 +231,39 @@ size_t partit (char** lines, size_t left, size_t right)
 {
     assert (lines);
 
-    if (right - left == 1)
-    {
-        if (strcmp (lines[right], lines[left]) < 0)
-            swap_lines (lines, left, right);
-        return right;
-    }
-
-    if (right - left == 0)
-    {
-        return right;
-    }
-
     char* mid = lines[(left + right) / 2];
 
-    while (left < right)
+    size_t i = left;
+    size_t j = right;
+    while (i < j)
     {
-        if (strcmp (lines[left], mid) >= 0)
+        while (compare_str (lines[i], mid) < 0)
+            i++;
+        while (compare_str (lines[j], mid) > 0)
+            j--;
+        if (i <= j)
         {
-            while (right > left)
-            {
-                if (strcmp (lines[right], mid) <= 0)
-                {
-                    swap_lines (lines, left, right);
-                    if (strcmp (lines[right], lines[left]) != 0)
-                        left--;
-                    break;
-                }
-                right--;
-            }
+            swap_lines (lines, i, j);
+            if (i < right)
+                i++;
+            if (j > left)
+                j--;
         }
-        left++;
     }
 
-    return right;
+    return j;
 }
 
 void my_q_sort (char** lines, size_t left, size_t right)
 {
     assert (lines);
 
-    size_t mid = partit (lines, left, right);
-
-    if (right - left >= 1)
+    if (left < right)
     {
-        my_q_sort (lines, left, mid - 1);
-        my_q_sort (lines, mid + 1, right);
+        size_t mid = partit (lines, left, right);
+        if (left < mid)
+            my_q_sort (lines, left, mid);
+        if (mid + 1 < right)
+            my_q_sort (lines, mid + 1, right);
     }
 }
