@@ -43,7 +43,7 @@ int main (int args, char* argv[])
     text.lines = create_lines_pointers (&text, &error);
     CHECK_ERROR(error);
 
-    my_q_sort (text.lines, text.num_lines - 1, sizeof (char*), compare_str);
+    my_q_sort (text.lines, 0, text.num_lines, sizeof (char*), compare_str);
 
     for (size_t i = 0; i < text.num_lines; i++)
         puts ((text.lines)[i]);
