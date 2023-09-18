@@ -21,4 +21,4 @@ onegin.exe: $(OBJ)
 .PHONY: clean all
 
 clean:
-	rm -rf *.o onegin.exe
+	del *.o onegin.exe
