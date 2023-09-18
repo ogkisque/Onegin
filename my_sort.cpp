@@ -24,8 +24,6 @@ int compare_str (const void* left, const void* right)
     const char* str_left = *((const char* const *) left);
     const char* str_right = *((const char* const *) right);
 
-    //return strcmp (str_left, str_right);
-
     int ans = 0;
     size_t i = 0;
     size_t j = 0;
@@ -68,7 +66,6 @@ size_t partit (void* lines, size_t left, size_t right, size_t size_line, int (*c
 
     while (i < j)
     {
-        bool fl = true;
         int comp_i = comparator ((char*) lines + i * size_line, (char*) lines + mid * size_line);
         int comp_j = comparator ((char*) lines + j * size_line, (char*) lines + mid * size_line);
 

@@ -27,5 +27,7 @@ size_t get_file_size (const char* file_name, Errors* error);
 char* memory_alloc (size_t size_file, Errors* error);
 int copy_data (const char* file_name, char* buffer, size_t size_file, Errors* error);
 char** create_lines_pointers (Text* text, Errors* error);
+void text_ctor (Text* text, const char* file_name, Errors* error);
+void print_text (const Text* text);
 
 #endif //INPUT_OUTPUT_COPY_HEADER

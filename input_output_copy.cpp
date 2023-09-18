@@ -1,5 +1,32 @@
 #include "input_output_copy.h"
 
+void text_ctor (Text* text, const char* file_name, Errors* error)
+{
+    assert (text);
+    assert (file_name);
+    assert (error);
+
+    size_t size_file = get_file_size (file_name, error);
+
+    text->length = size_file / sizeof (char);
+
+    text->buffer = memory_alloc (size_file, error);
+
+    copy_data (file_name, text->buffer, size_file, error);
+
+    (text->buffer)[text->length + 1] = '\n';
+    text->num_lines = 0;
+    text->lines = create_lines_pointers (text, error);
+}
+
+void print_text (const Text* text)
+{
+    assert (text);
+
+    for (size_t i = 0; i < text->num_lines; i++)
+        puts ((text->lines)[i]);
+}
+
 size_t get_file_size (const char* file_name, Errors* error)
 {
     assert (error);
@@ -44,6 +71,7 @@ int copy_data (const char* file_name, char* buffer, size_t size_file, Errors* er
 
     size_t num_read = fread (buffer, sizeof (char), size_file / sizeof (char), file);
 
+    fclose (file);
     if (!num_read)
     {
         *error = COPY_FILE_ERR;

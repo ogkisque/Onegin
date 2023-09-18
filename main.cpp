@@ -4,11 +4,11 @@
 #include "input_output_copy.h"
 #include "my_sort.h"
 
-#define CHECK_ERROR(error)\
-        if (error >= 0)\
-        {\
-            errors_handler (error);\
-            return 1;\
+#define CHECK_ERROR(error)          \
+        if (error >= 0)             \
+        {                           \
+            errors_handler (error); \
+            return 1;               \
         }
 
 const size_t MAX_SIZE_FILE_NAME = 50;
@@ -27,26 +27,12 @@ int main (int args, char* argv[])
     Errors error = CORRECT;
     Text text = {.buffer = NULL, .length = 0, .lines = NULL, .num_lines = 0};
 
-    size_t size_file = get_file_size (file_name, &error);
-    CHECK_ERROR(error);
-
-    text.length = size_file / sizeof (char);
-
-    text.buffer = memory_alloc (size_file, &error);
-    CHECK_ERROR(error);
-
-    copy_data (file_name, text.buffer, size_file, &error);
-    CHECK_ERROR(error);
-
-    (text.buffer)[text.length + 1] = '\n';
-    text.num_lines = 0;
-    text.lines = create_lines_pointers (&text, &error);
+    text_ctor (&text, file_name, &error);
     CHECK_ERROR(error);
 
     my_q_sort (text.lines, 0, text.num_lines, sizeof (char*), compare_str);
 
-    for (size_t i = 0; i < text.num_lines; i++)
-        puts ((text.lines)[i]);
+    print_text (&text);
 
     free (text.buffer);
     free (text.lines);
