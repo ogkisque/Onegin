@@ -8,15 +8,14 @@ CFLAGS = -c -g -Wshadow -Winit-self -Wredundant-decls -Wcast-align\
 -Wsign-promo -Wstack-usage=8192 -Wstrict-aliasing -Wstrict-null-sentinel\
 -Wtype-limits -Wwrite-strings -Werror=vla -D_DEBUG -D_EJUDGE_CLIENT_SIDE
 
-HEADERS = input_output_copy.h my_sort.h
 OBJ = main.o input_output_copy.o my_sort.o
 
 all: onegin.exe
 
-onegin.exe: $(OBJ) $(HEADERS)
+onegin.exe: $(OBJ)
 	$(CC) $^ -o $@
 
-%.o: %.cpp %.h
+%.o: %.cpp
 	$(CC) $(CFLAGS) $<
 
 .PHONY: clean all
